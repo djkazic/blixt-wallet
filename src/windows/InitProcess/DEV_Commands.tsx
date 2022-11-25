@@ -16,7 +16,7 @@ import { getTransactions, getTransaction, createTransaction, clearTransactions }
 import { useStoreState, useStoreActions } from "../../state/store";
 import { invoicesrpc, lnrpc } from "../../../proto/lightning";
 import { sendCommand } from "../../lndmobile/utils";
-import { getInfo, connectPeer, listPeers, decodePayReq, queryRoutes, checkStatus, getNodeInfo, listUnspent, getNetworkInfo } from "../../lndmobile/index";
+import { importGraph, getInfo, connectPeer, listPeers, decodePayReq, queryRoutes, checkStatus, getNodeInfo, listUnspent, getNetworkInfo } from "../../lndmobile/index";
 import { initWallet, genSeed, deriveKey, signMessage, derivePrivateKey } from "../../lndmobile/wallet";
 import { pendingChannels, listChannels, openChannel, closeChannel } from "../../lndmobile/channel";
 import { newAddress, sendCoins } from "../../lndmobile/onchain";
@@ -89,9 +89,9 @@ export default function DEV_Commands({ navigation, continueCallback }: IProps) {
             </>
           }
 
-          <Text style={{ width: "100%"}}>Random:</Text>
+          <Text style={{ width: "100%" }}>Random:</Text>
           <Button small onPress={async () => {
-            Alert.alert("",await Linking.getInitialURL()??"no");
+            Alert.alert("", await Linking.getInitialURL() ?? "no");
           }}><Text style={styles.buttonText}>getInitialURL</Text></Button>
           <Button small onPress={async () => {
             console.log(await generateSecureRandom(32));
@@ -222,7 +222,7 @@ export default function DEV_Commands({ navigation, continueCallback }: IProps) {
                   locationLong: null,
                   website: invoice.website ?? null,
                   hops: [],
-                  preimage: new Uint8Array([0,0]),
+                  preimage: new Uint8Array([0, 0]),
                   lnurlPayResponse: null,
                   identifiedService: invoice.lightningService,
                 });
@@ -283,7 +283,7 @@ export default function DEV_Commands({ navigation, continueCallback }: IProps) {
               type: "PAY",
               website: "pollofeed.com",
               lightningService: "pollofeed",
-            },  {
+            }, {
               value: 1000,
               description: "1000 sats bet on 2",
               type: "PAY",
@@ -297,7 +297,7 @@ export default function DEV_Commands({ navigation, continueCallback }: IProps) {
             actions.channel.setBalance(Long.fromNumber(497581));
           }}><Text style={styles.buttonText}>Setup demo environment</Text></Button>
           <Button small onPress={async () => {
-            PushNotification.clearLocalNotification("TEST123",21312);
+            PushNotification.clearLocalNotification("TEST123", 21312);
             // PushNotification.localNotification({
             //   channelId: ANDROID_PUSH_NOTIFICATION_PUSH_CHANNEL_ID,
             //   message: "Persistant 123",
@@ -318,7 +318,7 @@ export default function DEV_Commands({ navigation, continueCallback }: IProps) {
             console.log(await NativeModules.LndMobileTools.tailLog(10));
           }}><Text style={styles.buttonText}>LndMobileTools.tailLog</Text></Button>
 
-          <Text style={{ width: "100%"}}>iOS LndMobile:</Text>
+          <Text style={{ width: "100%" }}>iOS LndMobile:</Text>
           <Button small onPress={async () => {
             console.log(NativeModules.LndMobileTools);
             console.log(NativeModules.LndMobileTools.writeConfigFile());
@@ -439,7 +439,7 @@ export default function DEV_Commands({ navigation, continueCallback }: IProps) {
             <Text style={styles.buttonText}>DEBUG_deleteDatafolder</Text>
           </Button>
 
-          <Text style={{ width:"100%" }}>App storage:</Text>
+          <Text style={{ width: "100%" }}>App storage:</Text>
           <Button small onPress={async () => actions.openDb()}><Text style={styles.buttonText}>actions.openDb()</Text></Button>
           <Button small onPress={async () => actions.resetDb()}><Text style={styles.buttonText}>actions.resetDb()</Text></Button>
           <Button small onPress={async () => await setItem(StorageItem.lndChainBackend, "neutrino")}><Text style={styles.buttonText}>lndChainBackend = neutrino</Text></Button>
@@ -580,7 +580,7 @@ export default function DEV_Commands({ navigation, continueCallback }: IProps) {
                   locationLong: null,
                   website: invoice.website ?? null,
                   hops: [],
-                  preimage: new Uint8Array([0,0]),
+                  preimage: new Uint8Array([0, 0]),
                   lnurlPayResponse: null,
                 });
               }
@@ -616,7 +616,7 @@ export default function DEV_Commands({ navigation, continueCallback }: IProps) {
               description: "Feed Chickens @ pollofeed.com",
               type: "PAY",
               website: "pollofeed.com"
-            },  {
+            }, {
               value: 1000,
               description: "1000 sats bet on 2",
               type: "RECEIVE",
@@ -663,6 +663,7 @@ export default function DEV_Commands({ navigation, continueCallback }: IProps) {
 
           <Text style={{ width: "100%" }}>Lndmobile commands:</Text>
           {[
+            ["importGraph", importGraph],
             ["getInfo", getInfo],
             ["genSeed", genSeed],
             ["newAddress", newAddress],

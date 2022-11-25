@@ -427,6 +427,10 @@ accept-keysend=1
 tlsdisableautofill=1
 maxpendingchannels=1000
 
+[caches]
+caches.channel-cache-size=50000
+caches.reject-cache-size=100000
+
 [db]
 db.no-graph-cache=${lndNoGraphCache.toString()}
 

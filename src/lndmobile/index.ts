@@ -1,6 +1,6 @@
 import { NativeModules } from "react-native";
 import { sendCommand, sendStreamCommand, decodeStreamResult } from "./utils";
-import { lnrpc, routerrpc, invoicesrpc } from "../../proto/lightning";
+import { devrpc, lnrpc, routerrpc, invoicesrpc } from "../../proto/lightning";
 import Long from "long";
 import sha from "sha.js";
 import { stringToUint8Array, hexToUint8Array, unicodeStringToUint8Array } from "../utils";
@@ -8,6 +8,8 @@ import { TLV_KEYSEND, TLV_RECORD_NAME, TLV_WHATSAT_MESSAGE } from "../utils/cons
 import { checkLndStreamErrorResponse } from "../utils/lndmobile";
 import { LndMobileEventEmitter } from "../utils/event-listener";
 import { getChanInfo, listPrivateChannels } from "./channel";
+import logger from "../utils/log";
+const log = logger("Lightning");
 const { LndMobile, LndMobileTools } = NativeModules;
 
 /**
@@ -62,7 +64,7 @@ export const decodeState = (data: string): lnrpc.SubscribeStateResponse => {
 /**
  * @throws
  */
-export const startLnd = async (torEnabled: boolean, args?: string): Promise<{data:string}> => {
+export const startLnd = async (torEnabled: boolean, args?: string): Promise<{ data: string }> => {
   return await LndMobile.startLnd(torEnabled, args);
 };
 
@@ -151,6 +153,78 @@ export const getNodeInfo = async (pubKey: string, includeChannels: boolean = fal
     },
   });
   return response;
+};
+
+export const importGraph = async (): Promise<devrpc.ImportGraphResponse> => {
+  try {
+    const start = new Date();
+
+    console.log("importGraph()");
+    const url = 'https://dunder.eldamar.icu/describeGraph';
+    const graphResponse = await fetch(url);
+    console.log("importGraph() fetched");
+    const parsedDataPre = (await graphResponse.json()) as any;
+    const parsedData = lnrpc.ChannelGraph.fromObject(parsedDataPre);
+    console.log("importGraph() parse");
+
+    const nodes = parsedData.nodes;
+    const edges = parsedData.edges;
+    const chunkSize = 30;
+    for (let i = 0; i < nodes.length; i += chunkSize) {
+      const chunk = nodes.slice(i, i + chunkSize);
+      try {
+        const options: lnrpc.IChannelGraph = {
+          nodes: chunk,
+          edges: [],
+        };
+        const response = await sendCommand<lnrpc.IChannelGraph, lnrpc.ChannelGraph, devrpc.ImportGraphResponse>({
+          request: lnrpc.ChannelGraph,
+          response: devrpc.ImportGraphResponse,
+          method: "DevImportGraph",
+          options: options,
+        });
+      } catch (e) {
+        console.log("NODE FAILED BECAUSE [", e, "]", JSON.stringify(chunk))
+      }
+    }
+    console.log("Node import finished after " + (new Date().getTime() - start.getTime()) / 1000 + "s");
+    for (let i = 0; i < edges.length; i += chunkSize) {
+      const chunk = edges.slice(i, i + chunkSize);
+      try {
+        const options: lnrpc.IChannelGraph = {
+          nodes: [],
+          edges: chunk,
+        };
+        const response = await sendCommand<lnrpc.IChannelGraph, lnrpc.ChannelGraph, devrpc.ImportGraphResponse>({
+          request: lnrpc.ChannelGraph,
+          response: devrpc.ImportGraphResponse,
+          method: "DevImportGraph",
+          options: options,
+        });
+      } catch (e) {
+        if (!e.message.includes("edge already exist")) {
+          console.log("EDGE FAILED BECAUSE [", e, "]", JSON.stringify(chunk));
+        }
+      }
+    }
+    console.log("Edge import finished after " + (new Date().getTime() - start.getTime()) / 1000 + "s");
+    console.log("done");
+    // const options: lnrpc.IChannelGraph = {
+    //   nodes: parsedData['nodes'],
+    //   edges: [],//parsedData['edges'][0],
+    // };
+    // const response = await sendCommand<lnrpc.IChannelGraph, lnrpc.ChannelGraph, devrpc.ImportGraphResponse>({
+    //   request: lnrpc.ChannelGraph,
+    //   response: devrpc.ImportGraphResponse,
+    //   method: "DevImportGraph",
+    //   options: options,
+    // });
+    return "done";
+    // return response;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
 };
 
 /**
@@ -334,7 +408,7 @@ export const sendKeysendPayment = async (destinationPubKey: string, sat: Long, p
       try {
         const lastHop = route.hops!.length - 1;
 
-        route.hops![lastHop].customRecords!["5482373484"] =  preImage;
+        route.hops![lastHop].customRecords!["5482373484"] = preImage;
         if (tlvRecordNameStr && tlvRecordNameStr.length > 0) {
           route.hops![lastHop].customRecords![TLV_RECORD_NAME] = stringToUint8Array(tlvRecordNameStr);
         }
@@ -441,7 +515,7 @@ export interface IAddInvoiceBlixtLspArgs {
 /**
  * @throws
  */
-export const addInvoiceBlixtLsp = async ({amount, memo, expiry = 600, servicePubkey, chanId, cltvExpiryDelta, feeBaseMsat, feeProportionalMillionths, preimage}: IAddInvoiceBlixtLspArgs): Promise<lnrpc.AddInvoiceResponse> => {
+export const addInvoiceBlixtLsp = async ({ amount, memo, expiry = 600, servicePubkey, chanId, cltvExpiryDelta, feeBaseMsat, feeProportionalMillionths, preimage }: IAddInvoiceBlixtLspArgs): Promise<lnrpc.AddInvoiceResponse> => {
   const response = await sendCommand<lnrpc.IInvoice, lnrpc.Invoice, lnrpc.AddInvoiceResponse>({
     request: lnrpc.Invoice,
     response: lnrpc.AddInvoiceResponse,
@@ -452,13 +526,15 @@ export const addInvoiceBlixtLsp = async ({amount, memo, expiry = 600, servicePub
       memo,
       expiry: Long.fromValue(expiry),
       // private: true,
-      routeHints: [{hopHints: [{
-        nodeId: servicePubkey,
-        chanId: Long.fromString(chanId),
-        cltvExpiryDelta,
-        feeBaseMsat,
-        feeProportionalMillionths,
-      }]}],
+      routeHints: [{
+        hopHints: [{
+          nodeId: servicePubkey,
+          chanId: Long.fromString(chanId),
+          cltvExpiryDelta,
+          feeBaseMsat,
+          feeProportionalMillionths,
+        }]
+      }],
     },
   });
   return response;
@@ -566,7 +642,7 @@ export const getRecoveryInfo = async (): Promise<lnrpc.GetRecoveryInfoResponse> 
 /**
  * @throws
  */
- export const listUnspent = async (): Promise<lnrpc.ListUnspentResponse> => {
+export const listUnspent = async (): Promise<lnrpc.ListUnspentResponse> => {
   const response = await sendCommand<lnrpc.IListUnspentRequest, lnrpc.ListUnspentRequest, lnrpc.ListUnspentResponse>({
     request: lnrpc.ListUnspentRequest,
     response: lnrpc.ListUnspentResponse,
@@ -579,7 +655,7 @@ export const getRecoveryInfo = async (): Promise<lnrpc.GetRecoveryInfoResponse> 
 /**
  * @throws
  */
- export const resetMissionControl = async (): Promise<routerrpc.ResetMissionControlResponse> => {
+export const resetMissionControl = async (): Promise<routerrpc.ResetMissionControlResponse> => {
   const response = await sendCommand<routerrpc.IResetMissionControlRequest, routerrpc.ResetMissionControlRequest, routerrpc.ResetMissionControlResponse>({
     request: routerrpc.ResetMissionControlRequest,
     response: routerrpc.ResetMissionControlResponse,
