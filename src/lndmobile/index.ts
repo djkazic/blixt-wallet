@@ -166,34 +166,16 @@ export const importGraph = async (): Promise<devrpc.ImportGraphResponse> => {
     const parsedDataPre = (await graphResponse.json()) as any;
     const parsedData = lnrpc.ChannelGraph.fromObject(parsedDataPre);
     console.log("importGraph() parse");
-
     const nodes = parsedData.nodes;
     const edges = parsedData.edges;
     const chunkSize = 30;
     for (let i = 0; i < nodes.length; i += chunkSize) {
-      const chunk = nodes.slice(i, i + chunkSize);
+      const nodeChunk = nodes.slice(i, i + chunkSize);
+      const edgeChunk = edges.slice(i, i + chunkSize);
       try {
         const options: lnrpc.IChannelGraph = {
-          nodes: chunk,
-          edges: [],
-        };
-        const response = await sendCommand<lnrpc.IChannelGraph, lnrpc.ChannelGraph, devrpc.ImportGraphResponse>({
-          request: lnrpc.ChannelGraph,
-          response: devrpc.ImportGraphResponse,
-          method: "DevImportGraph",
-          options: options,
-        });
-      } catch (e) {
-        console.log("NODE FAILED BECAUSE [", e, "]", JSON.stringify(chunk))
-      }
-    }
-    console.log("Node import finished after " + (new Date().getTime() - start.getTime()) / 1000 + "s");
-    for (let i = 0; i < edges.length; i += chunkSize) {
-      const chunk = edges.slice(i, i + chunkSize);
-      try {
-        const options: lnrpc.IChannelGraph = {
-          nodes: [],
-          edges: chunk,
+          nodes: nodeChunk,
+          edges: edgeChunk,
         };
         const response = await sendCommand<lnrpc.IChannelGraph, lnrpc.ChannelGraph, devrpc.ImportGraphResponse>({
           request: lnrpc.ChannelGraph,
@@ -203,11 +185,11 @@ export const importGraph = async (): Promise<devrpc.ImportGraphResponse> => {
         });
       } catch (e) {
         if (!e.message.includes("edge already exist")) {
-          console.log("EDGE FAILED BECAUSE [", e, "]", JSON.stringify(chunk));
+          console.log("CHUNK FAILED BECAUSE [", e, "]", JSON.stringify(nodeChunk), JSON.stringify(edgeChunk));
         }
       }
     }
-    console.log("Edge import finished after " + (new Date().getTime() - start.getTime()) / 1000 + "s");
+    console.log("Graph import finished after " + (new Date().getTime() - start.getTime()) / 1000 + "s");
     console.log("done");
     // const options: lnrpc.IChannelGraph = {
     //   nodes: parsedData['nodes'],
