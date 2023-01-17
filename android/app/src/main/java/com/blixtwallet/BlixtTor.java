@@ -37,7 +37,6 @@ public class BlixtTor extends ReactContextBaseJavaModule {
 
     @Override
     public void onServiceDisconnected(ComponentName arg0) {
-      torServiceBound = false;
       Log.i(TAG, "onServiceDisconnected");
     }
   };
@@ -53,6 +52,9 @@ public class BlixtTor extends ReactContextBaseJavaModule {
         while (calleeResolvers.size() > 0) {
           calleeResolvers.pop().resolve(TorService.socksPort);
         }
+      } else if (status.equals(TorService.STATUS_OFF)) {
+        getReactApplicationContext().unregisterReceiver(torBroadcastReceiver);
+        torServiceBound = false;
       }
     }
   };
@@ -89,8 +91,7 @@ public class BlixtTor extends ReactContextBaseJavaModule {
   @ReactMethod
   public void stopTor(Promise promise) {
     if (torServiceBound) {
-      Log.i(TAG,"Unbinding TorService");
-      getReactApplicationContext().unregisterReceiver(torBroadcastReceiver);
+      Log.i(TAG,"Stopping TorService");
       getReactApplicationContext().unbindService(torServiceConnection);
     }
     promise.resolve(true);
