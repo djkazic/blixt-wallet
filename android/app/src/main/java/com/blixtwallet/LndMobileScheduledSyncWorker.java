@@ -83,11 +83,11 @@ public class LndMobileScheduledSyncWorker extends ListenableWorker {
       writeLastScheduledSyncAttemptToDb();
 
       HyperLog.i(TAG, "MainActivity.started = " + MainActivity.started);
-      if (MainActivity.started) {
-        HyperLog.i(TAG, "MainActivity is started, quitting job");
-        completer.set(Result.success());
-        return null;
-      }
+      //if (MainActivity.started) {
+      //  HyperLog.i(TAG, "MainActivity is started, quitting job");
+      //  completer.set(Result.success());
+      //  return null;
+      //}
 
       KeychainModule keychain = new KeychainModule(new ReactApplicationContext(getApplicationContext()));
 
@@ -179,28 +179,31 @@ public class LndMobileScheduledSyncWorker extends ListenableWorker {
             try {
               switch (msg.what) {
                 case LndMobileService.MSG_REGISTER_CLIENT_ACK: {
-                  try {
-                    if (!lndStarted) {
-                      HyperLog.i(TAG, "Sending MSG_START_LND request");
-                      startLnd();
-                    } else {
-                      // Just exit if we reach this scenario
-                      HyperLog.w(TAG, "WARNING, Got MSG_REGISTER_CLIENT_ACK when lnd should already be started, quitting work.");
-                      unbindLndMobileService();
-                      completer.set(Result.success());
-                      return;
-                    }
-                  } catch (Throwable t) {
-                    t.printStackTrace();
-                  }
-                  break;
-                }
-                case LndMobileService.MSG_START_LND_RESULT: {
-                  // TODO(hsjoberg): check for "lnd already started" error? (strictly not needed though)
                   lndStarted = true;
                   subscribeStateRequest();
                   break;
+                  // try {
+                  //   if (!lndStarted) {
+                  //     HyperLog.i(TAG, "Sending MSG_START_LND request");
+                  //     startLnd();
+                  //   } else {
+                  //     // Just exit if we reach this scenario
+                  //     HyperLog.w(TAG, "WARNING, Got MSG_REGISTER_CLIENT_ACK when lnd should already be started, quitting work.");
+                  //     unbindLndMobileService();
+                  //     completer.set(Result.success());
+                  //     return;
+                  //   }
+                  // } catch (Throwable t) {
+                  //   t.printStackTrace();
+                  // }
+                  // break;
                 }
+                // case LndMobileService.MSG_START_LND_RESULT: {
+                //   // TODO(hsjoberg): check for "lnd already started" error? (strictly not needed though)
+                //   lndStarted = true;
+                //   subscribeStateRequest();
+                //   break;
+                // }
                 case LndMobileService.MSG_GRPC_STREAM_RESULT: {
                   bundle = msg.getData();
                   final byte[] response = bundle.getByteArray("response");
@@ -223,7 +226,7 @@ public class LndMobileScheduledSyncWorker extends ListenableWorker {
                         getInfoRequest();
                       } else if (currentState == lnrpc.Stateservice.WalletState.SERVER_ACTIVE) {
                         HyperLog.i(TAG, "Got WalletState.SERVER_ACTIVE");
-                        HyperLog.i(TAG, "We do not care about that.");
+                        getInfoRequest();
                       } else  {
                         HyperLog.w(TAG, "SubscribeState got unknown state " + currentState);
                       }
@@ -319,22 +322,22 @@ public class LndMobileScheduledSyncWorker extends ListenableWorker {
     unbindLndMobileService();
 
     if (torStarted) {
-//      if (!MainActivity.started) {
+      if (!MainActivity.started) {
         HyperLog.i(TAG, "Stopping Tor");
-         blixtTor.stopTor(new PromiseWrapper() {
-           @Override
-           void onSuccess(@Nullable Object value) {
-             HyperLog.i(TAG,"Tor stopped");
-           }
+          blixtTor.stopTor(new PromiseWrapper() {
+            @Override
+            void onSuccess(@Nullable Object value) {
+              HyperLog.i(TAG,"Tor stopped");
+            }
 
-           @Override
-           void onFail(Throwable throwable) {
-             HyperLog.e(TAG, "Fail while stopping Tor", throwable);
-           }
-         });
-//      } else {
-//        HyperLog.w(TAG, "MainActivity was started when shutting down sync work. I will not stop Tor");
-//      }
+            @Override
+            void onFail(Throwable throwable) {
+              HyperLog.e(TAG, "Fail while stopping Tor", throwable);
+            }
+          });
+      } else {
+        HyperLog.w(TAG, "MainActivity was started when shutting down sync work. I will not stop Tor");
+      }
     }
 
     new Handler().postDelayed(new Runnable() {
