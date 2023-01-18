@@ -1,11 +1,18 @@
 package com.blixtwallet;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.database.sqlite.SQLiteDatabase;
+import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
@@ -18,12 +25,16 @@ import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.io.IOException;
 
+import androidx.core.app.NotificationManagerCompat;
+
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.modules.network.OkHttpClientFactory;
 import com.facebook.react.modules.network.ReactCookieJarContainer;
+import com.facebook.react.modules.storage.AsyncLocalStorageUtil;
+import com.facebook.react.modules.storage.ReactDatabaseSupplier;
 
 import org.torproject.jni.TorService;
 
@@ -31,9 +42,22 @@ import okhttp3.OkHttpClient;
 
 public class BlixtTor extends ReactContextBaseJavaModule {
   static private final String TAG = "BlixtTor";
+  String fileStorageLocation;
   static TorService torService;
   static String currentTorStatus = TorService.STATUS_OFF;
   static Stack<Promise> calleeResolvers = new Stack<>();
+  static NotificationManagerCompat notificationManager;
+
+  static private boolean getPersistentServicesEnabled(Context context) {
+    ReactDatabaseSupplier dbSupplier = ReactDatabaseSupplier.getInstance(context);
+    SQLiteDatabase db = dbSupplier.get();
+    String persistentServicesEnabled = AsyncLocalStorageUtil.getItemImpl(db, "persistentServicesEnabled");
+    if (persistentServicesEnabled != null) {
+      return persistentServicesEnabled.equals("true");
+    }
+    Log.w(TAG, "Could not find persistentServicesEnabled in asyncStorage");
+    return false;
+  }
 
   static private final ServiceConnection torServiceConnection = new ServiceConnection() {
     @Override
@@ -41,12 +65,38 @@ public class BlixtTor extends ReactContextBaseJavaModule {
       // We've bound to LocalService, cast the IBinder and get LocalService instance
       TorService.LocalBinder binder = (TorService.LocalBinder) service;
       torService = binder.getService();
+      Log.i(TAG, "torService.getService()");
+      boolean persistentServicesEnabled = getPersistentServicesEnabled(torService);
+      if (persistentServicesEnabled) {
+        torService.startForeground(0xc0feefee, getNotification(torService));
+      }
       Log.i(TAG, "onServiceConnected");
     }
 
     @Override
     public void onServiceDisconnected(ComponentName arg0) {
       Log.i(TAG, "onServiceDisconnected");
+    }
+
+    public Notification getNotification(Context context) {
+      Intent notificationIntent = new Intent (context, MainActivity.class);
+      PendingIntent pendingIntent =
+        PendingIntent.getActivity(context, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        NotificationChannel channel = new NotificationChannel("com.blixtwallet", "blixt", NotificationManager.IMPORTANCE_NONE);
+        channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+        notificationManager = NotificationManagerCompat.from(context);
+        notificationManager.createNotificationChannel(channel);
+        notificationManager.createNotificationChannel(channel);
+      }
+      return new Notification.Builder(context, "com.blixtwallet")
+        .setContentTitle("Blixt Tor")
+        .setContentText("Blixt Tor is running in the background")
+        .setSmallIcon(R.drawable.ic_stat_ic_notification)
+        .setContentIntent(pendingIntent)
+        .setTicker("Blixt Wallet")
+        .setOngoing(true)
+        .build();
     }
   };
 
@@ -55,6 +105,9 @@ public class BlixtTor extends ReactContextBaseJavaModule {
     public void onReceive(Context context, Intent intent) {
 //          Toast.makeText(context, intent.getStringExtra(TorService.EXTRA_STATUS), Toast.LENGTH_SHORT).show();
       String status = intent.getStringExtra(TorService.EXTRA_STATUS);
+      if (intent != null && intent.getAction() != null && intent.getAction().equals("org.torproject.android.intent.action.STOP")) {
+        torService.stopSelf();
+      }
       currentTorStatus = status;
       Log.i(TAG, "onReceive " + status);
       if (status.equals(TorService.STATUS_ON)) {
@@ -116,15 +169,22 @@ public class BlixtTor extends ReactContextBaseJavaModule {
     Log.i(TAG, "KOMMER HIT wat " + currentTorStatus);
     calleeResolvers.add(promise);
     
+    boolean persistentServicesEnabled = getPersistentServicesEnabled(getReactApplicationContext());
     getReactApplicationContext().registerReceiver(torBroadcastReceiver, new IntentFilter(TorService.ACTION_STATUS));
     Intent intent = new Intent(getReactApplicationContext(), TorService.class);
     updateTorConfigCustom(TorService.getDefaultsTorrc(getReactApplicationContext()),
       "SOCKSPort " + BlixtTorUtils.getSocksPort() + "\n");
+    if (persistentServicesEnabled) {
+      getReactApplicationContext().startForegroundService(intent);
+    }
     getReactApplicationContext().bindService(intent, torServiceConnection, Context.BIND_AUTO_CREATE);
   }
 
   @ReactMethod
   public void stopTor(Promise promise) {
+    if (notificationManager != null) {
+      notificationManager.cancelAll();
+    }
     Log.i(TAG,"Unbinding TorService");
     getReactApplicationContext().unbindService(torServiceConnection);
     promise.resolve(true);
