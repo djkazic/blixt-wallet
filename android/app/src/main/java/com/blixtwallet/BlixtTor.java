@@ -32,6 +32,17 @@ public class BlixtTor extends ReactContextBaseJavaModule {
   static String currentTorStatus = TorService.STATUS_OFF;
   static Stack<Promise> calleeResolvers = new Stack<>();
 
+  private boolean getPersistentServicesEnabled(Context context) {
+    ReactDatabaseSupplier dbSupplier = ReactDatabaseSupplier.getInstance(context);
+    SQLiteDatabase db = dbSupplier.get();
+    String persistentServicesEnabled = AsyncLocalStorageUtil.getItemImpl(db, "persistentServicesEnabled");
+    if (persistentServicesEnabled != null) {
+      return persistentServicesEnabled.equals("true");
+    }
+    HyperLog.w(TAG, "Could not find persistentServicesEnabled in asyncStorage");
+    return false;
+  }
+
   static private final ServiceConnection torServiceConnection = new ServiceConnection() {
     @Override
     public void onServiceConnected(ComponentName className, IBinder service) {
@@ -111,10 +122,13 @@ public class BlixtTor extends ReactContextBaseJavaModule {
     Log.i(TAG, "KOMMER HIT wat " + currentTorStatus);
     calleeResolvers.add(promise);
     
+    boolean persistentServicesEnabled = getPersistentServicesEnabled(getReactApplicationContext());
     getReactApplicationContext().registerReceiver(torBroadcastReceiver, new IntentFilter(TorService.ACTION_STATUS));
     Intent intent = new Intent(getReactApplicationContext(), TorService.class);
-    intent.setAction(TorService.ACTION_START);
-    getReactApplicationContext().startForegroundService(intent);
+    if (persistentServicesEnabled) {
+      intent.setAction(TorService.ACTION_START);
+      getReactApplicationContext().startForegroundService(intent);
+    }
     getReactApplicationContext().bindService(intent, torServiceConnection, Context.BIND_AUTO_CREATE);
   }
 
