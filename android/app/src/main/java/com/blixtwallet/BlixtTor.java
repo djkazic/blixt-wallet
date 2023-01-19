@@ -62,7 +62,7 @@ public class BlixtTor extends ReactContextBaseJavaModule {
       return new Notification.Builder(context, "com.blixtwallet")
         .setContentTitle("Blixt Tor")
         .setContentText("Blixt Tor is running in the background")
-        .setSmallIcon(R.drawable.ic_launcher_background)
+        .setSmallIcon(R.drawable.ic_stat_ic_notification)
         .setContentIntent(pendingIntent)
         .setTicker("Blixt Wallet")
         .setOngoing(true)
