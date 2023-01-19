@@ -1060,7 +1060,7 @@ ${t("experimental.tor.disabled.msg2")}`;
 
   // Persistent services
   const persistentServicesEnabled = useStoreState((store) => store.settings.persistentServicesEnabled);
-  const changePersistentServicesEnabled = useStoreActions((store) => store.settings.persistentServicesEnabled);
+  const changePersistentServicesEnabled = useStoreActions((store) => store.settings.changePersistentServicesEnabled);
   const changePersistentServicesEnabledPress = async () => {
     await changePersistentServicesEnabled(!persistentServicesEnabled);
     toast(t("msg.written", { ns:namespaces.common }));

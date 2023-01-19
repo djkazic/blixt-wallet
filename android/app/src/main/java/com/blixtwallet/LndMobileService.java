@@ -32,6 +32,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 
+import com.facebook.react.modules.storage.AsyncLocalStorageUtil;
+import com.facebook.react.modules.storage.ReactDatabaseSupplier;
+
 import com.google.protobuf.ByteString;
 
 import com.hypertrack.hyperlog.HyperLog;
@@ -70,6 +73,8 @@ public class LndMobileService extends Service {
 
   private Map<String, Method> syncMethods = new HashMap<>();
   private Map<String, Method> streamMethods = new HashMap<>();
+
+  private ReactDatabaseSupplier dbSupplier;
 
   private static boolean isReceiveStream(Method m) {
     return m.toString().contains("RecvStream");
@@ -438,28 +443,44 @@ public class LndMobileService extends Service {
     }
   }
 
+  private boolean getPersistentServicesEnabled(Context context) {
+    dbSupplier = ReactDatabaseSupplier.getInstance(context);
+    SQLiteDatabase db = dbSupplier.get();
+    String persistentServicesEnabled = AsyncLocalStorageUtil.getItemImpl(db, "persistentServicesEnabled");
+    if (persistentServicesEnabled != null) {
+      return persistentServicesEnabled.equals("true");
+    }
+    HyperLog.w(TAG, "Could not find persistentServicesEnabled in asyncStorage");
+    return false;
+  }
+
   @Override
   public int onStartCommand(Intent intent, int flags, int startid) {
     HyperLog.v(TAG, "onStartCommand()");
-    Intent notificationIntent = new Intent (this, MainActivity.class);
-    PendingIntent pendingIntent =
-      PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      NotificationChannel chan = new NotificationChannel("com.blixtwallet", "blixt", NotificationManager.IMPORTANCE_NONE);
-      chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
-      NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-      assert manager != null;
-      manager.createNotificationChannel(chan);
+    boolean persistentServicesEnabled = getPersistentServicesEnabled(this);
+    // persistent services on, start service as foreground-svc
+    if (persistentServicesEnabled) {
+      Intent notificationIntent = new Intent (this, MainActivity.class);
+      PendingIntent pendingIntent =
+        PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        NotificationChannel chan = new NotificationChannel("com.blixtwallet", "blixt", NotificationManager.IMPORTANCE_NONE);
+        chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        assert manager != null;
+        manager.createNotificationChannel(chan);
+      }
+      Notification notification = new Notification.Builder(this, "com.blixtwallet")
+          .setContentTitle("Blixt LND")
+          .setContentText("Blixt LND is running in the background")
+          .setSmallIcon(R.drawable.ic_stat_ic_notification)
+          .setContentIntent(pendingIntent)
+          .setTicker("Blixt Wallet")
+          .setOngoing(true)
+          .build();
+      startForeground(ONGOING_NOTIFICATION_ID, notification);
     }
-    Notification notification = new Notification.Builder(this, "com.blixtwallet")
-        .setContentTitle("Blixt LND")
-        .setContentText("Blixt LND is running in the background")
-        .setSmallIcon(R.drawable.ic_stat_ic_notification)
-        .setContentIntent(pendingIntent)
-        .setTicker("Blixt Wallet")
-        .setOngoing(true)
-        .build();
-    startForeground(ONGOING_NOTIFICATION_ID, notification);
+    // else noop, instead of calling startService, start will be handled by binding
     return startid;
   }
 
