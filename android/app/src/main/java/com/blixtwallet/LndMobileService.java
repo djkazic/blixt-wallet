@@ -452,8 +452,8 @@ public class LndMobileService extends Service {
       manager.createNotificationChannel(chan);
     }
     Notification notification = new Notification.Builder(this, "com.blixtwallet")
-        .setContentTitle("Blixt Wallet")
-        .setContentText("Blixt Wallet is running in the background")
+        .setContentTitle("Blixt LND")
+        .setContentText("Blixt LND is running in the background")
         .setSmallIcon(R.drawable.ic_launcher_background)
         .setContentIntent(pendingIntent)
         .setTicker("Blixt Wallet")
