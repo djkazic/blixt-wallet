@@ -65,6 +65,7 @@ public class BlixtTor extends ReactContextBaseJavaModule {
         .setSmallIcon(R.drawable.ic_launcher_background)
         .setContentIntent(pendingIntent)
         .setTicker("Blixt Wallet")
+        .setOngoing(true)
         .build();
     }
   };

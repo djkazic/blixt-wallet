@@ -19,7 +19,6 @@ import android.os.RemoteException;
 import android.util.Base64;
 import android.util.Log;
 
-
 import lndmobile.Callback;
 import lndmobile.Lndmobile;
 import lndmobile.RecvStream;
@@ -458,6 +457,7 @@ public class LndMobileService extends Service {
         .setSmallIcon(R.drawable.ic_launcher_background)
         .setContentIntent(pendingIntent)
         .setTicker("Blixt Wallet")
+        .setOngoing(true)
         .build();
     startForeground(ONGOING_NOTIFICATION_ID, notification);
     return startid;
