@@ -1058,6 +1058,14 @@ ${t("experimental.tor.disabled.msg2")}`;
     toast(t("msg.written", { ns:namespaces.common }));
   };
 
+  // Persistent services
+  const persistentServicesEnabled = useStoreState((store) => store.settings.persistentServicesEnabled);
+  const changePersistentServicesEnabled = useStoreActions((store) => store.settings.persistentServicesEnabled);
+  const changePersistentServicesEnabledPress = async () => {
+    await changePersistentServicesEnabled(!persistentServicesEnabled);
+    toast(t("msg.written", { ns:namespaces.common }));
+  };
+
   return (
     <Container>
       <Content style={{ padding: 10 }}>
@@ -1541,6 +1549,13 @@ ${t("experimental.tor.disabled.msg2")}`;
               <Text note={true}>{t("experimental.MPP.subtitle")}</Text>
             </Body>
             <Right><CheckBox checked={multiPathPaymentsEnabled} onPress={onChangeMultiPartPaymentEnabledPress} /></Right>
+          </ListItem>
+          <ListItem style={style.listItem} icon={true} onPress={changePersistentServicesEnabledPress}>
+            <Left><Icon style={style.icon} type="MaterialCommunityIcons" name="persistentServicesEnabled" /></Left>
+            <Body>
+              <Text>{t("debug.persistentServices.title")}</Text>
+            </Body>
+            <Right><CheckBox checked={persistentServicesEnabled} onPress={changePersistentServicesEnabledPress} /></Right>
           </ListItem>
           <ListItem style={style.listItem} icon={true} onPress={changeStrictGraphPruningEnabledPress}>
             <Left><Icon style={style.icon} type="Entypo" name="trash" /></Left>
