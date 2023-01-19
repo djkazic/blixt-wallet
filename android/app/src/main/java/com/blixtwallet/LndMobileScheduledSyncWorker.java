@@ -182,28 +182,7 @@ public class LndMobileScheduledSyncWorker extends ListenableWorker {
                   lndStarted = true;
                   subscribeStateRequest();
                   break;
-                  // try {
-                  //   if (!lndStarted) {
-                  //     HyperLog.i(TAG, "Sending MSG_START_LND request");
-                  //     startLnd();
-                  //   } else {
-                  //     // Just exit if we reach this scenario
-                  //     HyperLog.w(TAG, "WARNING, Got MSG_REGISTER_CLIENT_ACK when lnd should already be started, quitting work.");
-                  //     unbindLndMobileService();
-                  //     completer.set(Result.success());
-                  //     return;
-                  //   }
-                  // } catch (Throwable t) {
-                  //   t.printStackTrace();
-                  // }
-                  // break;
                 }
-                // case LndMobileService.MSG_START_LND_RESULT: {
-                //   // TODO(hsjoberg): check for "lnd already started" error? (strictly not needed though)
-                //   lndStarted = true;
-                //   subscribeStateRequest();
-                //   break;
-                // }
                 case LndMobileService.MSG_GRPC_STREAM_RESULT: {
                   bundle = msg.getData();
                   final byte[] response = bundle.getByteArray("response");
@@ -213,18 +192,7 @@ public class LndMobileScheduledSyncWorker extends ListenableWorker {
                     try {
                       lnrpc.Stateservice.SubscribeStateResponse state = lnrpc.Stateservice.SubscribeStateResponse.parseFrom(response);
                       lnrpc.Stateservice.WalletState currentState = state.getState();
-                      if (currentState == lnrpc.Stateservice.WalletState.LOCKED) {
-                        HyperLog.i(TAG, "Got WalletState.LOCKED");
-                        HyperLog.i(TAG, "SubscribeState reports wallet is locked. Sending UnlockWallet request");
-                        unlockWalletRequest(password);
-                      } else if (currentState == lnrpc.Stateservice.WalletState.UNLOCKED) {
-                        HyperLog.i(TAG, "Got WalletState.UNLOCKED");
-                        HyperLog.i(TAG, "Waiting for WalletState.RPC_ACTIVE");
-                      } else if (currentState == lnrpc.Stateservice.WalletState.RPC_ACTIVE) {
-                        HyperLog.i(TAG, "Got WalletState.RPC_ACTIVE");
-                        HyperLog.i(TAG, "LndMobileService reports RPC server ready. Sending GetInfo request");
-                        getInfoRequest();
-                      } else if (currentState == lnrpc.Stateservice.WalletState.SERVER_ACTIVE) {
+                      if (currentState == lnrpc.Stateservice.WalletState.SERVER_ACTIVE) {
                         HyperLog.i(TAG, "Got WalletState.SERVER_ACTIVE");
                         getInfoRequest();
                       } else  {
@@ -324,17 +292,17 @@ public class LndMobileScheduledSyncWorker extends ListenableWorker {
     if (torStarted) {
       if (!MainActivity.started) {
         HyperLog.i(TAG, "Stopping Tor");
-          blixtTor.stopTor(new PromiseWrapper() {
-            @Override
-            void onSuccess(@Nullable Object value) {
-              HyperLog.i(TAG,"Tor stopped");
-            }
+        blixtTor.stopTor(new PromiseWrapper() {
+          @Override
+          void onSuccess(@Nullable Object value) {
+            HyperLog.i(TAG,"Tor stopped");
+          }
 
-            @Override
-            void onFail(Throwable throwable) {
-              HyperLog.e(TAG, "Fail while stopping Tor", throwable);
-            }
-          });
+          @Override
+          void onFail(Throwable throwable) {
+            HyperLog.e(TAG, "Fail while stopping Tor", throwable);
+          }
+        });
       } else {
         HyperLog.w(TAG, "MainActivity was started when shutting down sync work. I will not stop Tor");
       }
