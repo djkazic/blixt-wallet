@@ -48,6 +48,7 @@ public class LndMobileScheduledSyncWorker extends ListenableWorker {
   private boolean torEnabled = false;
   private int torSocksPort = -1;
   private boolean torStarted = false;
+  private boolean persistentServicesEnabled = false;
   // Keeps track of how many times we've tried to get info
   // If this keeps going without `syncedToChain` flipping to `true`
   // we'll close down lnd and the worker
@@ -75,6 +76,7 @@ public class LndMobileScheduledSyncWorker extends ListenableWorker {
   @Override
   public ListenableFuture<Result> startWork() {
     torEnabled = getTorEnabled();
+    persistentServicesEnabled = getPersistentServicesEnabled();
 
     return CallbackToFutureAdapter.getFuture(completer -> {
       HyperLog.i(TAG, "------------------------------------");
@@ -83,11 +85,11 @@ public class LndMobileScheduledSyncWorker extends ListenableWorker {
       writeLastScheduledSyncAttemptToDb();
 
       HyperLog.i(TAG, "MainActivity.started = " + MainActivity.started);
-      //if (MainActivity.started) {
-      //  HyperLog.i(TAG, "MainActivity is started, quitting job");
-      //  completer.set(Result.success());
-      //  return null;
-      //}
+      if (persistentServicesEnabled || MainActivity.started) {
+        HyperLog.i(TAG, "MainActivity is started, persistentServicesEnabled = " + persistentServicesEnabled + ", quitting job");
+        completer.set(Result.success());
+        return null;
+      }
 
       KeychainModule keychain = new KeychainModule(new ReactApplicationContext(getApplicationContext()));
 
@@ -118,7 +120,6 @@ public class LndMobileScheduledSyncWorker extends ListenableWorker {
               //              future.set(Result.failure());
               //              return;
               //            }
-
               blixtTor.startTor(new PromiseWrapper() {
                 @Override
                 void onSuccess(@Nullable Object value) {
@@ -179,6 +180,24 @@ public class LndMobileScheduledSyncWorker extends ListenableWorker {
             try {
               switch (msg.what) {
                 case LndMobileService.MSG_REGISTER_CLIENT_ACK: {
+                  try {
+                    if (!lndStarted) {
+                      HyperLog.i(TAG, "Sending MSG_START_LND request");
+                      startLnd();
+                    } else {
+                      // Just exit if we reach this scenario
+                      HyperLog.w(TAG, "WARNING, Got MSG_REGISTER_CLIENT_ACK when lnd should already be started, quitting work.");
+                      unbindLndMobileService();
+                      completer.set(Result.success());
+                      return;
+                    }
+                  } catch (Throwable t) {
+                    t.printStackTrace();
+                  }
+                  break;
+                }
+                case LndMobileService.MSG_START_LND_RESULT: {
+                  // TODO(hsjoberg): check for "lnd already started" error? (strictly not needed though)
                   lndStarted = true;
                   subscribeStateRequest();
                   break;
@@ -192,9 +211,20 @@ public class LndMobileScheduledSyncWorker extends ListenableWorker {
                     try {
                       lnrpc.Stateservice.SubscribeStateResponse state = lnrpc.Stateservice.SubscribeStateResponse.parseFrom(response);
                       lnrpc.Stateservice.WalletState currentState = state.getState();
-                      if (currentState == lnrpc.Stateservice.WalletState.SERVER_ACTIVE) {
-                        HyperLog.i(TAG, "Got WalletState.SERVER_ACTIVE");
+                      if (currentState == lnrpc.Stateservice.WalletState.LOCKED) {
+                        HyperLog.i(TAG, "Got WalletState.LOCKED");
+                        HyperLog.i(TAG, "SubscribeState reports wallet is locked. Sending UnlockWallet request");
+                        unlockWalletRequest(password);
+                      } else if (currentState == lnrpc.Stateservice.WalletState.UNLOCKED) {
+                        HyperLog.i(TAG, "Got WalletState.UNLOCKED");
+                        HyperLog.i(TAG, "Waiting for WalletState.RPC_ACTIVE");
+                      } else if (currentState == lnrpc.Stateservice.WalletState.RPC_ACTIVE) {
+                        HyperLog.i(TAG, "Got WalletState.RPC_ACTIVE");
+                        HyperLog.i(TAG, "LndMobileService reports RPC server ready. Sending GetInfo request");
                         getInfoRequest();
+                      } else if (currentState == lnrpc.Stateservice.WalletState.SERVER_ACTIVE) {
+                        HyperLog.i(TAG, "Got WalletState.SERVER_ACTIVE");
+                        HyperLog.i(TAG, "We do not care about that.");
                       } else  {
                         HyperLog.w(TAG, "SubscribeState got unknown state " + currentState);
                       }
@@ -290,7 +320,7 @@ public class LndMobileScheduledSyncWorker extends ListenableWorker {
     unbindLndMobileService();
 
     if (torStarted) {
-      if (!MainActivity.started) {
+//      if (!MainActivity.started) {
         HyperLog.i(TAG, "Stopping Tor");
         blixtTor.stopTor(new PromiseWrapper() {
           @Override
@@ -303,9 +333,9 @@ public class LndMobileScheduledSyncWorker extends ListenableWorker {
             HyperLog.e(TAG, "Fail while stopping Tor", throwable);
           }
         });
-      } else {
-        HyperLog.w(TAG, "MainActivity was started when shutting down sync work. I will not stop Tor");
-      }
+//      } else {
+//        HyperLog.w(TAG, "MainActivity was started when shutting down sync work. I will not stop Tor");
+//      }
     }
 
     new Handler().postDelayed(new Runnable() {
@@ -432,6 +462,16 @@ public class LndMobileScheduledSyncWorker extends ListenableWorker {
       lndMobileServiceBound = false;
       HyperLog.i(TAG, "Unbinding LndMobileService");
     }
+  }
+
+  private boolean getPersistentServicesEnabled() {
+    SQLiteDatabase db = dbSupplier.get();
+    String persistentServicesEnabled = AsyncLocalStorageUtil.getItemImpl(db, "persistentServicesEnabled");
+    if (persistentServicesEnabled != null) {
+      return persistentServicesEnabled.equals("true");
+    }
+    HyperLog.w(TAG, "Could not find persistentServicesEnabled in asyncStorage");
+    return false;
   }
 
   private boolean getTorEnabled() {
