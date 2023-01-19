@@ -59,7 +59,10 @@ public class BlixtTor extends ReactContextBaseJavaModule {
       TorService.LocalBinder binder = (TorService.LocalBinder) service;
       torService = binder.getService();
       Log.i(TAG, "torService.getService()");
-      torService.startForeground(0xc0feefee, getNotification(torService));
+      boolean persistentServicesEnabled = getPersistentServicesEnabled(getReactApplicationContext());
+      if (persistentServicesEnabled) {
+        torService.startForeground(0xc0feefee, getNotification(torService));
+      }
       Log.i(TAG, "onServiceConnected");
     }
 
