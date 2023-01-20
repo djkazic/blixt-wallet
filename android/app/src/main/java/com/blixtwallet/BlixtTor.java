@@ -41,7 +41,7 @@ public class BlixtTor extends ReactContextBaseJavaModule {
   static String currentTorStatus = TorService.STATUS_OFF;
   static Stack<Promise> calleeResolvers = new Stack<>();
 
-  private boolean getPersistentServicesEnabled(Context context) {
+  static private boolean getPersistentServicesEnabled(Context context) {
     ReactDatabaseSupplier dbSupplier = ReactDatabaseSupplier.getInstance(context);
     SQLiteDatabase db = dbSupplier.get();
     String persistentServicesEnabled = AsyncLocalStorageUtil.getItemImpl(db, "persistentServicesEnabled");
@@ -59,7 +59,7 @@ public class BlixtTor extends ReactContextBaseJavaModule {
       TorService.LocalBinder binder = (TorService.LocalBinder) service;
       torService = binder.getService();
       Log.i(TAG, "torService.getService()");
-      boolean persistentServicesEnabled = getPersistentServicesEnabled(getReactApplicationContext());
+      boolean persistentServicesEnabled = getPersistentServicesEnabled(torService);
       if (persistentServicesEnabled) {
         torService.startForeground(0xc0feefee, getNotification(torService));
       }
