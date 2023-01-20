@@ -113,7 +113,6 @@ public class BlixtTor extends ReactContextBaseJavaModule {
 
   public BlixtTor(ReactApplicationContext reactContext) {
     super(reactContext);
-    fileStorageLocation = reactContext.getFilesDir().getPath() + "/torfiles";
   }
 
   public String getName() {
@@ -152,7 +151,8 @@ public class BlixtTor extends ReactContextBaseJavaModule {
     Intent intent = new Intent(getReactApplicationContext(), TorService.class);
     updateTorConfigCustom(TorService.getDefaultsTorrc(getReactApplicationContext()),
       "ControlPort " + BlixtTorUtils.getControlPort() + "\n" +
-      "SOCKSPort " + BlixtTorUtils.getSocksPort() + "\n");
+      "SOCKSPort " + BlixtTorUtils.getSocksPort() + "\n" +
+      "CookieAuthentication 1" + "\n");
     if (persistentServicesEnabled) {
       intent.setAction(TorService.ACTION_START);
       getReactApplicationContext().startForegroundService(intent);
