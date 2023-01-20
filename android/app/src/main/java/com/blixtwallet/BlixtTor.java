@@ -40,6 +40,7 @@ public class BlixtTor extends ReactContextBaseJavaModule {
   static TorService torService;
   static String currentTorStatus = TorService.STATUS_OFF;
   static Stack<Promise> calleeResolvers = new Stack<>();
+  static NotificationManagerCompat notificationManager;
 
   static private boolean getPersistentServicesEnabled(Context context) {
     ReactDatabaseSupplier dbSupplier = ReactDatabaseSupplier.getInstance(context);
@@ -78,7 +79,7 @@ public class BlixtTor extends ReactContextBaseJavaModule {
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         NotificationChannel channel = new NotificationChannel("com.blixtwallet", "blixt", NotificationManager.IMPORTANCE_NONE);
         channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
+        notificationManager = NotificationManagerCompat.from(context);
         notificationManager.createNotificationChannel(channel);
         notificationManager.createNotificationChannel(channel);
       }
@@ -161,6 +162,9 @@ public class BlixtTor extends ReactContextBaseJavaModule {
 
   @ReactMethod
   public void stopTor(Promise promise) {
+    if (notificationManager != null) {
+      notificationManager.cancelAll();
+    }
     Log.i(TAG,"Unbinding TorService");
     getReactApplicationContext().unbindService(torServiceConnection);
     promise.resolve(true);
