@@ -394,8 +394,6 @@ public class LndMobileScheduledSyncWorker extends ListenableWorker {
     Bundle bundle = new Bundle();
     String params = "--lnddir=" + getApplicationContext().getFilesDir().getPath();
     if (torEnabled) {
-      // HyperLog.d(TAG, "Adding Tor params for starting lnd, torSocksPort: " + torSocksPort);
-      // params += " --tor.active --tor.socks=127.0.0.1:" + torSocksPort;
       int socksPort = BlixtTorUtils.getSocksPort();
       int controlPort = BlixtTorUtils.getControlPort();
       HyperLog.d(TAG, "Adding Tor params for starting lnd, torSocksPort: " + socksPort + ", controlPort: " + controlPort);

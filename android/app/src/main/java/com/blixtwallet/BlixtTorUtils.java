@@ -25,7 +25,6 @@ public class BlixtTorUtils {
     return controlPort;
   }
 
-
   public static int getListenPort() {
     int listenPort = 9760;
     if (BuildConfig.CHAIN.equals("testnet")) {
