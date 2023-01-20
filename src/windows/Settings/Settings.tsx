@@ -1551,7 +1551,7 @@ ${t("experimental.tor.disabled.msg2")}`;
             <Right><CheckBox checked={multiPathPaymentsEnabled} onPress={onChangeMultiPartPaymentEnabledPress} /></Right>
           </ListItem>
           <ListItem style={style.listItem} icon={true} onPress={changePersistentServicesEnabledPress}>
-            <Left><Icon style={style.icon} type="MaterialCommunityIcons" name="persistentServicesEnabled" /></Left>
+            <Left><Icon style={style.icon} type="Entypo" name="globe" /></Left>
             <Body>
               <Text>{t("debug.persistentServices.title")}</Text>
             </Body>
