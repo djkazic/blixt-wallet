@@ -150,9 +150,7 @@ public class BlixtTor extends ReactContextBaseJavaModule {
     getReactApplicationContext().registerReceiver(torBroadcastReceiver, new IntentFilter(TorService.ACTION_STATUS));
     Intent intent = new Intent(getReactApplicationContext(), TorService.class);
     updateTorConfigCustom(TorService.getDefaultsTorrc(getReactApplicationContext()),
-      "ControlPort " + BlixtTorUtils.getControlPort() + "\n" +
-      "SOCKSPort " + BlixtTorUtils.getSocksPort() + "\n" +
-      "CookieAuthentication 1" + "\n");
+      "SOCKSPort " + BlixtTorUtils.getSocksPort() + "\n");
     if (persistentServicesEnabled) {
       intent.setAction(TorService.ACTION_START);
       getReactApplicationContext().startForegroundService(intent);
