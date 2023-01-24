@@ -266,8 +266,8 @@ export const sendKeysendPaymentV2 = (destinationPubKey: string, sat: Long, preIm
 
     noInflightUpdates: true,
     timeoutSeconds: 60,
-    maxParts: 2,
-    feeLimitSat: Long.fromValue(Math.max(10, sat?.mul(0.02).toNumber() ?? 0)),
+    maxParts: 16,
+    feeLimitSat: Long.fromValue(Math.max(10, (sat?.toNumber() || 0) * 0.02)),
     cltvLimit: 0,
   };
   if (tlvRecordNameStr && tlvRecordNameStr.length > 0) {
