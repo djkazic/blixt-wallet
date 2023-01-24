@@ -410,6 +410,11 @@ export const getRouteHints = async (max: number = 5): Promise<lnrpc.IRouteHint[]
       continue;
     }
 
+    let channelId = chanInfo.channelId;
+    if (channel.aliasScids && channel.aliasScids.length > 0) {
+      channelId = channel.aliasScids[0];
+    }
+
     routeHints.push(lnrpc.RouteHint.create({
       hopHints: [{
         nodeId: remotePubkey,
