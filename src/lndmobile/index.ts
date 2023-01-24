@@ -266,8 +266,8 @@ export const sendKeysendPaymentV2 = (destinationPubKey: string, sat: Long, preIm
 
     noInflightUpdates: true,
     timeoutSeconds: 60,
-    maxParts: 2,
-    feeLimitSat: Long.fromValue(Math.max(10, sat?.mul(0.02).toNumber() ?? 0)),
+    maxParts: 16,
+    feeLimitSat: Long.fromValue(Math.max(10, (sat?.toNumber() || 0) * 0.02)),
     cltvLimit: 0,
   };
   if (tlvRecordNameStr && tlvRecordNameStr.length > 0) {
@@ -408,6 +408,11 @@ export const getRouteHints = async (max: number = 5): Promise<lnrpc.IRouteHint[]
 
     if (!policy) {
       continue;
+    }
+
+    let channelId = chanInfo.channelId;
+    if (channel.aliasScids && channel.aliasScids.length > 0) {
+      channelId = channel.aliasScids[0];
     }
 
     routeHints.push(lnrpc.RouteHint.create({
