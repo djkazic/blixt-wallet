@@ -86,6 +86,7 @@ open class Lnd {
     "GetRecoveryInfo": { bytes, cb in LndmobileGetRecoveryInfo(bytes, cb) },
     "WalletKitListUnspent": { bytes, cb in LndmobileWalletKitListUnspent(bytes, cb) },
     "RouterResetMissionControl": { bytes, cb in LndmobileRouterResetMissionControl(bytes, cb) },
+    "SendCustomMessage": { bytes, cb in LndmobileSendCustomMessage(bytes, cb) },
 
     // channel
     //
@@ -128,6 +129,7 @@ open class Lnd {
     //
     "RouterSendPaymentV2": { req, cb in return LndmobileRouterSendPaymentV2(req, cb) },
     "SubscribeState": { req, cb in return LndmobileSubscribeState(req, cb) },
+    "SubscribeCustomMessages": { req, cb in return LndmobileSubscribeCustomMessages(req, cb) },
     // channel
     //
     "CloseChannel": { req, cb in return LndmobileCloseChannel(req, cb)},
