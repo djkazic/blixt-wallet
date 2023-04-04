@@ -381,6 +381,7 @@ export const addInvoice = async (amount: number, memo: string, expiry: number = 
       descriptionHash,
       expiry: Long.fromValue(expiry),
       private: true,
+      minHopHints: 6,
     },
   });
   return response;
