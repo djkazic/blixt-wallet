@@ -70,6 +70,7 @@ public class MainApplication extends MultiDexApplication implements ReactApplica
 
     // Make sure OkHttp is proxied via SOCKS Tor.
     // This makes sure that `fetch` is proxied in Javascript-land.
+    /**
     com.facebook.react.modules.network.OkHttpClientProvider.setOkHttpClientFactory(new OkHttpClientFactory() {
       @Override
       public OkHttpClient createNewNetworkModuleClient() {
@@ -79,6 +80,7 @@ public class MainApplication extends MultiDexApplication implements ReactApplica
         return okHttpClientBuilder.build();
       }
     });
+    **/
   }
 
   /**

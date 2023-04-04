@@ -47,10 +47,12 @@ export const notificationManager: INotificationManagerModel = {
         if (granted === "denied" || granted === "never_ask_again") {
           log.w("Post notification permission was denied", [granted]);
         } else {
-          return;
+          log.w("Hit weird case for granted", [granted]);
+          //return;
         }
       }
 
+      log.w("Doing PushNotification.configure");
       PushNotification.configure({
         requestPermissions: false,
         onNotification: ((notification) => {
@@ -71,6 +73,7 @@ export const notificationManager: INotificationManagerModel = {
       });
 
       if (PLATFORM === "android") {
+        log.w("Doing android createChannel");
         PushNotification.createChannel({
             channelId: ANDROID_PUSH_NOTIFICATION_PUSH_CHANNEL_ID,
             channelName: ANDROID_PUSH_NOTIFICATION_PUSH_CHANNEL_NAME,
@@ -80,6 +83,7 @@ export const notificationManager: INotificationManagerModel = {
       }
     } catch (error) {
       // TODO(hsjoberg): Perhaps should be handled in the lib instead?
+      log.i("createChannelErr", error);
       if (error.domain === "UNErrorDomain") {
         return;
       }
