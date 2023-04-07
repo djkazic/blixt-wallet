@@ -249,6 +249,12 @@ export const decodeSendPaymentV2Result = (data: string): lnrpc.Payment => {
   });
 };
 
+export const decodeTrackPaymentV2Result = (data: string): lnrpc.Payment => {
+  return decodeStreamResult<lnrpc.Payment>({
+    response: lnrpc.Payment,
+    base64Result: data,
+  });
+};
 
 export const sendKeysendPaymentV2 = (destinationPubKey: string, sat: Long, preImage: Uint8Array, routeHints: lnrpc.IRouteHint[], tlvRecordNameStr: string, tlvRecordWhatSatMessageStr: string): Promise<lnrpc.Payment> => {
   const options: routerrpc.ISendPaymentRequest = {
@@ -607,6 +613,42 @@ export const getRecoveryInfo = async (): Promise<lnrpc.GetRecoveryInfoResponse> 
     options: {},
   });
   return response;
+};
+
+/**
+ * @throws
+ */
+ export const trackPaymentV2Sync = async (paymentHash: string): Promise<lnrpc.Payment> => {
+  const options: routerrpc.ITrackPaymentRequest = {
+    paymentHash: hexToUint8Array(paymentHash),
+    noInflightUpdates: true,
+  };
+  
+  return new Promise(async (resolve, reject) => {
+    const listener = LndMobileEventEmitter.addListener("RouterTrackPaymentV2", (e) => {
+      try {
+        listener.remove();
+        const error = checkLndStreamErrorResponse("RouterTrackPaymentV2", e);
+        if (error == "EOF") {
+          return;
+        } else if (error) {
+          console.log("Got error from RouterTrackPaymentV2", [error]);
+          return reject(error);
+        }
+
+        const response = decodeTrackPaymentV2Result(e.data);
+        resolve(response);
+      } catch (error) {
+        reject(error.message);
+      }
+    });
+
+    const response = await sendStreamCommand<routerrpc.ITrackPaymentRequest, routerrpc.TrackPaymentRequest>({
+      request: routerrpc.TrackPaymentRequest,
+      method: "RouterTrackPaymentV2",
+      options,
+    }, false);
+  });
 };
 
 export const subscribeCustomMessages = async () => {

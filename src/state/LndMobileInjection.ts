@@ -26,6 +26,7 @@ import {
   getNodeInfo,
   getNetworkInfo,
   getInfo,
+  trackPaymentV2Sync,
   lookupInvoice,
   listPeers,
   readLndLog,
@@ -107,6 +108,7 @@ export interface ILndMobileInjections {
     getInfo: () => Promise<lnrpc.GetInfoResponse>;
     getNetworkInfo: () => Promise<lnrpc.NetworkInfo>;
     getNodeInfo: (pubKey: string) => Promise<lnrpc.NodeInfo>;
+    trackPaymentV2Sync: (rHash: string) => Promise<lnrpc.Payment>;
     lookupInvoice: (rHash: string) => Promise<lnrpc.Invoice>;
     listPeers: () => Promise<lnrpc.ListPeersResponse>;
     readLndLog: () => Promise<IReadLndLogResponse>;
@@ -184,6 +186,7 @@ export default {
     listUnspent,
     resetMissionControl,
     getNodeInfo,
+    trackPaymentV2Sync,
     getNetworkInfo,
     getInfo,
     lookupInvoice,

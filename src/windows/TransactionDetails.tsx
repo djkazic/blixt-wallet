@@ -191,6 +191,13 @@ export default function TransactionDetails({ route, navigation }: ITransactionDe
     transactionValue = transaction.value;
   }
 
+  // In the case of an 0 sat invoice, transaction.value will be 0,
+  // instead get from amtPaidSat.
+  // TODO eventually sync up with what TransactionCard.tsx does.
+  if (transactionValue.eq(0)) {
+    transactionValue = transaction.amtPaidSat;
+  }
+
   const hasCoordinates = transaction.locationLat && transaction.locationLong;
 
   if (currentScreen === "Overview") {
@@ -226,32 +233,32 @@ export default function TransactionDetails({ route, navigation }: ITransactionDe
                 }
               </View>
               <MetaData title={t("date")} data={formatISO(fromUnixTime(transaction.date.toNumber()))} />
-              {transaction.note && <MetaData title={t("note")} data={transaction.note} />}
-              {transaction.website && <MetaData title={t("website")} data={transaction.website} url={"https://" + transaction.website} />}
-              {transaction.type !== "NORMAL" && <MetaData title={t("type")} data={transaction.type} />}
+              {transaction.note ? <MetaData title={t("note")} data={transaction.note} /> : null}
+              {transaction.website ? <MetaData title={t("website")} data={transaction.website} url={"https://" + transaction.website} /> : null}
+              {transaction.type !== "NORMAL" ? <MetaData title={t("type")} data={transaction.type} /> : null}
               {(transaction.type === "LNURL" && transaction.lnurlPayResponse && transaction.lnurlPayResponse.successAction) && <LNURLMetaData transaction={transaction} />}
-              {(transaction.nodeAliasCached && name === null) && <MetaData title={t("generic.nodeAlias", { ns: namespaces.common })} data={transaction.nodeAliasCached} />}
-              {direction === "send" && transaction.lightningAddress && <MetaDataLightningAddress title={t("generic.lightningAddress", { ns: namespaces.common })} data={transaction.lightningAddress} />}
-              {direction === "receive" && !transaction.tlvRecordName && transaction.payer && <MetaData title={t("payer")} data={transaction.payer} />}
-              {direction === "receive" && transaction.tlvRecordName && <MetaData title={t("payer")} data={transaction.tlvRecordName} />}
-              {(direction === "send" && name) && <MetaData title={t("recipient")} data={name} />}
-              {(description !== null && description.length > 0) && <MetaData title={t("generic.description", { ns: namespaces.common })} data={description} />}
+              {(transaction.nodeAliasCached && name === null) ? <MetaData title={t("generic.nodeAlias", { ns: namespaces.common })} data={transaction.nodeAliasCached} /> : null}
+              {direction === "send" && transaction.lightningAddress ? <MetaDataLightningAddress title={t("generic.lightningAddress", { ns: namespaces.common })} data={transaction.lightningAddress} /> : null}
+              {direction === "receive" && !transaction.tlvRecordName && transaction.payer ? <MetaData title={t("payer")} data={transaction.payer} /> : null}
+              {direction === "receive" && transaction.tlvRecordName ? <MetaData title={t("payer")} data={transaction.tlvRecordName} /> : null}
+              {(direction === "send" && name) ? <MetaData title={t("recipient")} data={name} /> : null}
+              {(description !== null && description.length > 0) ? <MetaData title={t("generic.description", { ns: namespaces.common })} data={description} /> : null}
               <MetaData title={t("generic.amount", { ns: namespaces.common })} data={formatBitcoin(transactionValue, bitcoinUnit)} />
-              {transaction.valueFiat != null && transaction.valueFiatCurrency && <MetaData title={t("amountInFiatTimeOfPayment")} data={`${transaction.valueFiat.toFixed(2)} ${transaction.valueFiatCurrency}`} />}
-              {transaction.fee !== null && transaction.fee !== undefined && <MetaData title={t("generic.fee", { ns: namespaces.common })} data={transaction.fee.toString() + " Satoshi"} />}
-              {transaction.duration && <MetaData title={t("duration")} data={durationAsSeconds(transaction.duration)} />}
-              {transaction.hops && transaction.hops.length > 0 && <MetaData title={t("numberOfHops")} data={transaction.hops.length.toString()} />}
-              {direction === "send" && <MetaData title={t("remotePubkey")} data={transaction.remotePubkey} />}
+              {transaction.valueFiat != null && transaction.valueFiatCurrency ? <MetaData title={t("amountInFiatTimeOfPayment")} data={`${transaction.valueFiat.toFixed(2)} ${transaction.valueFiatCurrency}`} /> : null}
+              {transaction.fee !== null && transaction.fee !== undefined ? <MetaData title={t("generic.fee", { ns: namespaces.common })} data={transaction.fee.toString() + " Satoshi"} /> : null}
+              {transaction.duration ? <MetaData title={t("duration")} data={durationAsSeconds(transaction.duration)} /> : null}
+              {transaction.hops && transaction.hops.length > 0 ? <MetaData title={t("numberOfHops")} data={transaction.hops.length.toString()} /> : null}
+              {direction === "send" ? <MetaData title={t("remotePubkey")} data={transaction.remotePubkey} /> : null}
               <MetaData title={t("paymentHash")} data={transaction.rHash}/>
-              {transaction.status === "SETTLED" && transaction.preimage && <MetaData title={t("preimage")} data={bytesToHexString(transaction.preimage)}/>}
+              {transaction.status === "SETTLED" && transaction.preimage ? <MetaData title={t("preimage")} data={bytesToHexString(transaction.preimage)}/> : null}
               <MetaData title={t("status")} data={capitalize(transaction.status)} />
-              {transaction.status === "OPEN" && transaction.type !== "LNURL" &&
+              {transaction.status === "OPEN" && transaction.type !== "LNURL" ?
                 <>
                   <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
                     <QrCode size={smallScreen ? 220 : 280} data={transaction.paymentRequest.toUpperCase()} onPress={onQrPress} border={25} />
                   </View>
                   <CopyAddress text={transaction.paymentRequest} onPress={onPaymentRequestTextPress} />
-                </>
+                </> : null
               }
             </ScrollView>
           </CardItem>
