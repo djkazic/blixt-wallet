@@ -235,8 +235,7 @@ export default function SendConfirmation({ navigation, route }: ISendConfirmatio
   }
 
   const canSend = (
-    lightningReadyToSend &&
-    !isPaying
+    lightningReadyToSend
   );
 
   return (

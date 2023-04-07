@@ -251,15 +251,15 @@ export default function TransactionDetails({ route, navigation }: ITransactionDe
               {transaction.hops && transaction.hops.length > 0 && <MetaData title={t("numberOfHops")} data={transaction.hops.length.toString()} />}
               {direction === "send" && <MetaData title={t("remotePubkey")} data={transaction.remotePubkey} />}
               <MetaData title={t("paymentHash")} data={transaction.rHash}/>
-              {transaction.status === "SETTLED" && transaction.preimage && <MetaData title={t("preimage")} data={bytesToHexString(transaction.preimage)}/>}
+              {transaction.status === "SETTLED" && transaction.preimage ? <MetaData title={t("preimage")} data={bytesToHexString(transaction.preimage)}/> : null}
               <MetaData title={t("status")} data={capitalize(transaction.status)} />
-              {transaction.status === "OPEN" && transaction.type !== "LNURL" &&
+              {transaction.status === "OPEN" && transaction.type !== "LNURL" ?
                 <>
                   <View style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
                     <QrCode size={smallScreen ? 220 : 280} data={transaction.paymentRequest.toUpperCase()} onPress={onQrPress} border={25} />
                   </View>
                   <CopyAddress text={transaction.paymentRequest} onPress={onPaymentRequestTextPress} />
-                </>
+                </> : null
               }
             </ScrollView>
           </CardItem>
