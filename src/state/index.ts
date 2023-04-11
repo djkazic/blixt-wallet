@@ -138,7 +138,7 @@ export const model: IStoreModel = {
     }
     log.v("initializeApp()");
 
-    const { initialize, checkStatus, startLnd } = injections.lndMobile.index;
+    const { initialize, checkStatus, startLnd, gossipSync } = injections.lndMobile.index;
     const db = await actions.openDb();
     if (!await getItemObjectAsyncStorage(StorageItem.app)) {
       log.i("Initializing app for the first time");
@@ -253,12 +253,13 @@ export const model: IStoreModel = {
         await setItemObject(StorageItem.persistentServicesWarningShown, true);
         await NativeModules.BlixtTor.showMsg();
       }
-      log.v("Running LndMobile.initialize()");
+      log.i("Running LndMobile.initialize()");
       const initReturn = await initialize();
-      log.v("initialize done", [initReturn]);
-
+      log.i("initialize done", [initReturn]);
+      const syncRes = await gossipSync();
+      log.i("syncRes done", [syncRes]);
       const status = await checkStatus();
-      log.d("status", [status]);
+      log.i("status", [status]);
       if ((status & ELndMobileStatusCodes.STATUS_PROCESS_STARTED) !== ELndMobileStatusCodes.STATUS_PROCESS_STARTED) {
         log.i("Starting lnd");
         try {
@@ -270,7 +271,6 @@ export const model: IStoreModel = {
             args +=  "--reset-wallet-transactions ";
             await setRescanWallet(false);
           }
-
           log.d("startLnd", [
             await startLnd(torEnabled, args)
           ]);
