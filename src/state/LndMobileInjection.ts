@@ -78,6 +78,9 @@ import {
 import {
   checkScheduledSyncWorkStatus
 } from "../lndmobile/scheduled-sync"; // TODO(hsjoberg): This could be its own injection "LndMobileScheduledSync"
+import {
+  checkScheduledGossipSyncWorkStatus
+} from "../lndmobile/scheduled-gossip-sync";
 import { lnrpc, signrpc, invoicesrpc, autopilotrpc, routerrpc } from "../../proto/lightning";
 import { WorkInfo } from "../lndmobile/LndMobile";
 
@@ -160,6 +163,9 @@ export interface ILndMobileInjections {
   scheduledSync: {
     checkScheduledSyncWorkStatus: () => Promise<WorkInfo>;
   };
+  scheduledGossipSync: {
+    checkScheduledGossipSyncWorkStatus: () => Promise<WorkInfo>;
+  };
 }
 
 export default {
@@ -240,5 +246,8 @@ export default {
   },
   scheduledSync: {
     checkScheduledSyncWorkStatus,
+  },
+  scheduledGossipSync: {
+    checkScheduledGossipSyncWorkStatus,
   },
 } as ILndMobileInjections;

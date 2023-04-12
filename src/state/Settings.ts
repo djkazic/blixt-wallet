@@ -31,6 +31,7 @@ export interface ISettingsModel {
   changePushNotificationsEnabled: Thunk<ISettingsModel, boolean>;
   changeClipboardInvoiceCheckEnabled: Thunk<ISettingsModel, boolean>;
   changeScheduledSyncEnabled: Thunk<ISettingsModel, boolean>;
+  changeScheduledGossipSyncEnabled: Thunk<ISettingsModel, boolean>;
   changeDebugShowStartupInfo: Thunk<ISettingsModel, boolean>;
   changeGoogleDriveBackupEnabled: Thunk<ISettingsModel, boolean>;
   changePreferFiat: Thunk<ISettingsModel, boolean>;
@@ -66,6 +67,7 @@ export interface ISettingsModel {
   setPushNotificationsEnabled: Action<ISettingsModel, boolean>;
   setClipboardInvoiceCheckInvoicesEnabled: Action<ISettingsModel, boolean>;
   setScheduledSyncEnabled: Action<ISettingsModel, boolean>;
+  setScheduledGossipSyncEnabled: Action<ISettingsModel, boolean>;
   setDebugShowStartupInfo: Action<ISettingsModel, boolean>;
   setGoogleDriveBackupEnabled: Action<ISettingsModel, boolean>;
   setPreferFiat: Action<ISettingsModel, boolean>;
@@ -101,6 +103,7 @@ export interface ISettingsModel {
   pushNotificationsEnabled: boolean;
   clipboardInvoiceCheckEnabled: boolean;
   scheduledSyncEnabled: boolean;
+  scheduledGossipSyncEnabled: boolean;
   debugShowStartupInfo: boolean;
   googleDriveBackupEnabled: boolean;
   preferFiat: boolean;
@@ -140,6 +143,7 @@ export const settings: ISettingsModel = {
     actions.setPushNotificationsEnabled(await getItemObject(StorageItem.pushNotificationsEnabled || false));
     actions.setClipboardInvoiceCheckInvoicesEnabled(await getItemObject(StorageItem.clipboardInvoiceCheck || false));
     actions.setScheduledSyncEnabled(await getItemObject(StorageItem.scheduledSyncEnabled) || false);
+    actions.setScheduledGossipSyncEnabled(await getItemObject(StorageItem.scheduledGossipSyncEnabled) || false);
     actions.setDebugShowStartupInfo(await getItemObject(StorageItem.debugShowStartupInfo) || false);
     actions.setGoogleDriveBackupEnabled(await getItemObject(StorageItem.googleDriveBackupEnabled) || false);
     actions.setPreferFiat(await getItemObject(StorageItem.preferFiat) || false);
@@ -211,6 +215,11 @@ export const settings: ISettingsModel = {
   changeScheduledSyncEnabled: thunk(async (actions, payload) => {
     await setItemObject(StorageItem.scheduledSyncEnabled, payload);
     actions.setScheduledSyncEnabled(payload);
+  }),
+
+  changeScheduledGossipSyncEnabled: thunk(async (actions, payload) => {
+    await setItemObject(StorageItem.scheduledGossipSyncEnabled, payload);
+    actions.setScheduledGossipSyncEnabled(payload);
   }),
 
   changeDebugShowStartupInfo: thunk(async (actions, payload) => {
@@ -352,6 +361,7 @@ export const settings: ISettingsModel = {
   setPushNotificationsEnabled: action((state, payload) => { state.pushNotificationsEnabled = payload; }),
   setClipboardInvoiceCheckInvoicesEnabled: action((state, payload) => { state.clipboardInvoiceCheckEnabled = payload; }),
   setScheduledSyncEnabled: action((state, payload) => { state.scheduledSyncEnabled = payload; }),
+  setScheduledGossipSyncEnabled: action((state, payload) => { state.scheduledGossipSyncEnabled = payload; }),
   setDebugShowStartupInfo: action((state, payload) => { state.debugShowStartupInfo = payload; }),
   setGoogleDriveBackupEnabled: action((state, payload) => { state.googleDriveBackupEnabled = payload; }),
   setPreferFiat: action((state, payload) => { state.preferFiat = payload; }),
@@ -387,6 +397,7 @@ export const settings: ISettingsModel = {
   pushNotificationsEnabled: false,
   clipboardInvoiceCheckEnabled: false,
   scheduledSyncEnabled: false,
+  scheduledGossipSyncEnabled: false,
   debugShowStartupInfo: false,
   googleDriveBackupEnabled: false,
   preferFiat: false,

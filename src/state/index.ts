@@ -17,6 +17,7 @@ import { ISecurityModel, security } from "./Security";
 import { ISettingsModel, settings } from "./Settings";
 import { IClipboardManagerModel, clipboardManager } from "./ClipboardManager";
 import { IScheduledSyncModel, scheduledSync } from "./ScheduledSync";
+import { IScheduledGossipSyncModel, scheduledGossipSync } from "./ScheduledGossip";
 import { ILNUrlModel, lnUrl } from "./LNURL";
 import { IGoogleModel, google } from "./Google";
 import { IGoogleDriveBackupModel, googleDriveBackup } from "./GoogleDriveBackup";
@@ -100,6 +101,7 @@ export interface IStoreModel {
   settings: ISettingsModel;
   clipboardManager: IClipboardManagerModel;
   scheduledSync: IScheduledSyncModel;
+  scheduledGossipSync: IScheduledGossipSyncModel;
   lnUrl: ILNUrlModel;
   google: IGoogleModel;
   googleDriveBackup: IGoogleDriveBackupModel;
@@ -550,6 +552,7 @@ protocol.option-scid-alias=true
   settings,
   clipboardManager,
   scheduledSync,
+  scheduledGossipSync,
   lnUrl,
   google,
   googleDriveBackup,
