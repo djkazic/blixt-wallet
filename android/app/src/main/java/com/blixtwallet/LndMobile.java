@@ -150,9 +150,9 @@ class LndMobile extends ReactContextBaseJavaModule {
             promise.resolve("response=" + new String(bytes, StandardCharsets.UTF_8));
           } else if (bundle.containsKey("error_code")) {
             HyperLog.e(TAG, "ERROR" + msg);
-            promise.resolve(bundle.getString("error_desc"));
+            promise.reject(bundle.getString("error_code"), bundle.getString("error_desc"));
           } else {
-            promise.resolve("noresponse");
+            promise.reject("noresponse");
           }
           break;
         }
