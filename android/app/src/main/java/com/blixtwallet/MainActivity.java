@@ -38,13 +38,7 @@ public class MainActivity extends ReactActivity {
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
-    if (Build.VERSION.SDK_INT >= 33) {
-      if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.POST_NOTIFICATIONS},101);
-      }
-    }
-    super.onCreate(savedInstanceState);
-    currentActivity = new WeakReference<>(MainActivity.this);
+    super.onCreate(null);
     started = true;
   }
   /**
