@@ -77,6 +77,7 @@ export default function SendConfirmation({ navigation, route }: ISendConfirmatio
         }
 
         getFeeEstimate();
+        setIsPaying(false);
       }
     }
 
@@ -235,7 +236,8 @@ export default function SendConfirmation({ navigation, route }: ISendConfirmatio
   }
 
   const canSend = (
-    lightningReadyToSend
+    lightningReadyToSend &&
+    !isPaying
   );
 
   return (

@@ -639,7 +639,6 @@ export const getRecoveryInfo = async (): Promise<lnrpc.GetRecoveryInfoResponse> 
   return new Promise(async (resolve, reject) => {
     const listener = LndMobileEventEmitter.addListener("RouterTrackPaymentV2", (e) => {
       try {
-        listener.remove();
         const error = checkLndStreamErrorResponse("RouterTrackPaymentV2", e);
         if (error == "EOF") {
           return;
@@ -649,7 +648,11 @@ export const getRecoveryInfo = async (): Promise<lnrpc.GetRecoveryInfoResponse> 
         }
 
         const response = decodeTrackPaymentV2Result(e.data);
-        resolve(response);
+        // Only if we get an event that matches the original trackpayment request do we resolve the promise
+        if (response.paymentHash == paymentHash) {
+          resolve(response);
+          listener.remove();
+        }
       } catch (error) {
         reject(error.message);
       }

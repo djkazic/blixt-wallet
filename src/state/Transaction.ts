@@ -115,7 +115,7 @@ export const transaction: ITransactionModel = {
         log.i("trackpayment tx", [tx.rHash]);
         if (tx.valueMsat.isNegative()) {
           trackPayment(tx.rHash).then((trackPaymentResult) => {
-            log.i("trackpayment status", [trackPaymentResult.status]);
+            log.i("trackpayment status", [trackPaymentResult.status, trackPaymentResult.paymentHash]);
             if (trackPaymentResult.status === lnrpc.Payment.PaymentStatus.SUCCEEDED) {
               log.i("trackpayment updating tx [settled]");
               const updated: ITransaction = {
