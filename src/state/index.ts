@@ -4,6 +4,7 @@ import { SQLiteDatabase } from "react-native-sqlite-storage";
 import { generateSecureRandom } from "react-native-securerandom";
 import * as base64 from "base64-js";
 import Tor from "react-native-tor";
+import NetInfo from "@react-native-community/netinfo";
 
 import { IStoreInjections } from "./store";
 import { ILightningModel, lightning, LndChainBackend } from "./Lightning";
@@ -274,7 +275,8 @@ export const model: IStoreModel = {
             await NativeModules.LndMobileTools.DEBUG_deleteSpeedloaderDgraphDirectory();
           }
           try {
-            gossipStatus = await gossipSync();
+            let connectionState = await NetInfo.fetch();
+            gossipStatus = await gossipSync(connectionState.type);
           } catch (e) {
             log.e("GossipSync exception!", [e]);
           }
