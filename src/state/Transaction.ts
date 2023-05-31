@@ -12,9 +12,11 @@ import Long from "long";
 import logger from "./../utils/log";
 const log = logger("Transaction");
 
+let lock: Promise<void> = Promise.resolve();
+
 export interface ITransactionModel {
-  addTransaction: Action<ITransactionModel, ITransaction>;
-  updateTransaction: Action<ITransactionModel, { transaction: ITransaction }>;
+  addTransaction: Thunk<ITransactionModel, ITransaction, any, IStoreModel>;
+  updateTransaction: Thunk<ITransactionModel, { transaction: ITransaction }, any, IStoreModel>;
 
   syncTransaction: Thunk<ITransactionModel, ITransaction, any, IStoreModel>;
 
@@ -39,6 +41,7 @@ export const transaction: ITransactionModel = {
     if (!db) {
       throw new Error("syncTransaction(): db not ready");
     }
+    await lock;
     const transactions = getState().transactions;
     let foundTransaction = false;
 
@@ -57,26 +60,31 @@ export const transaction: ITransactionModel = {
       // LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       actions.addTransaction({ ...tx, id });
     }
+    await actions.getTransactions();
   }),
 
   /**
    * Updates a transaction in our transaction array
    */
-  updateTransaction: action((state, payload) => {
+  updateTransaction: thunk(async (actions, payload, { getState }) => {
     const { transaction: tx } = payload;
 
-    for (let i = 0; i < state.transactions.length; i++) {
-      if (state.transactions[i].rHash === tx.rHash) {
-        state.transactions[i] = tx;
+    await (lock = lock.then(async () => {
+      for (let i = 0; i < getState().transactions.length; i++) {
+        if (getState().transactions[i].rHash === tx.rHash) {
+          getState().transactions[i] = tx;
+        }
       }
-    }
+    }));
   }),
 
   /**
    * Add a transaction
    */
-  addTransaction: action((state, tx) => {
-    state.transactions.unshift(tx);
+  addTransaction: thunk(async (actions, tx, { getState }) => {
+    await (lock = lock.then(async () => {
+      getState().transactions.unshift(tx);
+    }));
   }),
 
   /**
