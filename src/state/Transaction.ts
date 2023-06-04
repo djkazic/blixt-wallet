@@ -12,11 +12,11 @@ import Long from "long";
 import logger from "./../utils/log";
 const log = logger("Transaction");
 
-let lock: Promise<void> = Promise.resolve();
+let lock = Promise.resolve();
 
 export interface ITransactionModel {
-  addTransaction: Thunk<ITransactionModel, ITransaction, any, IStoreModel>;
-  updateTransaction: Thunk<ITransactionModel, { transaction: ITransaction }, any, IStoreModel>;
+  addTransaction: Action<ITransactionModel, ITransaction>;
+  updateTransaction: Action<ITransactionModel, { transaction: ITransaction }>;
 
   syncTransaction: Thunk<ITransactionModel, ITransaction, any, IStoreModel>;
 
@@ -37,54 +37,52 @@ export const transaction: ITransactionModel = {
    * Checks if we have it in our transaction array, otherwise create a new transaction in the db
    */
   syncTransaction: thunk(async (actions, tx, { getState, getStoreState }) => {
+    await lock;
+
     const db = getStoreState().db;
     if (!db) {
       throw new Error("syncTransaction(): db not ready");
     }
-    await lock;
-    const transactions = getState().transactions;
-    let foundTransaction = false;
+    lock = lock.then(async() => {
+      const transactions = getState().transactions;
+      let foundTransaction = false;
 
-    for (const txIt of transactions) {
-      if (txIt.rHash === tx.rHash) {
-        await updateTransaction(db, { ...txIt, ...tx });
-        actions.updateTransaction({ transaction: { ...txIt, ...tx }});
-        foundTransaction = true;
+      for (const txIt of transactions) {
+        if (txIt.rHash === tx.rHash) {
+          await updateTransaction(db, { ...txIt, ...tx });
+          actions.updateTransaction({ transaction: { ...txIt, ...tx }});
+          foundTransaction = true;
+        }
       }
-    }
 
-    if (!foundTransaction) {
-      const id = await createTransaction(db, tx);
-      // This is causing animation glitches when moving from setup invoice -> QR
-      // Disabling until we know how to solve this.
-      // LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      actions.addTransaction({ ...tx, id });
-    }
-    await actions.getTransactions();
+      if (!foundTransaction) {
+        const id = await createTransaction(db, tx);
+        // This is causing animation glitches when moving from setup invoice -> QR
+        // Disabling until we know how to solve this.
+        // LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        actions.addTransaction({ ...tx, id });
+      }
+    });
   }),
 
   /**
    * Updates a transaction in our transaction array
    */
-  updateTransaction: thunk(async (actions, payload, { getState }) => {
+  updateTransaction: action((state, payload) => {
     const { transaction: tx } = payload;
 
-    await (lock = lock.then(async () => {
-      for (let i = 0; i < getState().transactions.length; i++) {
-        if (getState().transactions[i].rHash === tx.rHash) {
-          getState().transactions[i] = tx;
-        }
+    for (let i = 0; i < state.transactions.length; i++) {
+      if (state.transactions[i].rHash === tx.rHash) {
+        state.transactions[i] = tx;
       }
-    }));
+    }
   }),
 
   /**
    * Add a transaction
    */
-  addTransaction: thunk(async (actions, tx, { getState }) => {
-    await (lock = lock.then(async () => {
-      getState().transactions.unshift(tx);
-    }));
+  addTransaction: action((state, tx) => {
+    state.transactions.unshift(tx);
   }),
 
   /**
