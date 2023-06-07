@@ -203,7 +203,7 @@ export const sendPaymentSync = async (paymentRequest: string, amount?: Long, tlv
 };
 
 
-export const sendPaymentV2Sync = (paymentRequest: string, amount?: Long, payAmount?: Long, tlvRecordName?: string | null, multiPath?: boolean, maxLNFeePercentage: number = 2): Promise<lnrpc.Payment> => {
+export const sendPaymentV2Sync = (paymentRequest: string, amount?: Long, payAmount?: Long, tlvRecordName?: string | null, multiPath?: boolean, maxLNFeePercentage: number = 2, paymentHash: string): Promise<lnrpc.Payment> => {
   const maxFeeRatio = (maxLNFeePercentage ?? 2) / 100;
 
   const options: routerrpc.ISendPaymentRequest = {
@@ -226,7 +226,6 @@ export const sendPaymentV2Sync = (paymentRequest: string, amount?: Long, payAmou
   return new Promise(async (resolve, reject) => {
     const listener = LndMobileEventEmitter.addListener("RouterSendPaymentV2", (e) => {
       try {
-        listener.remove();
         const error = checkLndStreamErrorResponse("RouterSendPaymentV2", e);
         if (error === "EOF") {
           return;
@@ -236,7 +235,10 @@ export const sendPaymentV2Sync = (paymentRequest: string, amount?: Long, payAmou
         }
 
         const response = decodeSendPaymentV2Result(e.data);
-        resolve(response);
+        if (response.paymentHash == paymentHash) {
+          resolve(response);
+          listener.remove();
+        }
       } catch (error) {
         reject(error.message);
       }
